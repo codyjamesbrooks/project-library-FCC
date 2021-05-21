@@ -8,6 +8,8 @@ const bookSchema = new Schema({
   comments: [String],
 });
 
+const Book = mongoose.model("BookSchema", bookSchema);
+
 module.exports = function (app) {
   app
     .route("/api/books")
@@ -18,7 +20,12 @@ module.exports = function (app) {
 
     .post(function (req, res) {
       let title = req.body.title;
-      //response will contain new book object including atleast _id and title`
+      if (!title) return res.send("missing required field title");
+
+      Book.save((err, newBook) => {
+        if (err) return console.error(err);
+        res.json({ title: newBook.title, _id: newBook._id });
+      });
     })
 
     .delete(function (req, res) {
