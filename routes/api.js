@@ -8,21 +8,31 @@ const bookSchema = new Schema({
   comments: [String],
 });
 
-const Book = mongoose.model("BookSchema", bookSchema);
+const Book = mongoose.model("Book", bookSchema);
 
 module.exports = function (app) {
   app
     .route("/api/books")
     .get(function (req, res) {
-      //response will be array of book objects
-      //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
+      Book.find({}, function (err, books) {
+        if (err) return console.error(err);
+        let booksArray = books.map((book) => {
+          return {
+            _id: book._id,
+            title: book.title,
+            commentcount: book.comments.length,
+          };
+        });
+        res.json(booksArray);
+      });
     })
 
     .post(function (req, res) {
       let title = req.body.title;
       if (!title) return res.send("missing required field title");
 
-      Book.save((err, newBook) => {
+      const bookDoc = new Book({ title: req.body.title });
+      bookDoc.save((err, newBook) => {
         if (err) return console.error(err);
         res.json({ title: newBook.title, _id: newBook._id });
       });
@@ -36,7 +46,18 @@ module.exports = function (app) {
     .route("/api/books/:id")
     .get(function (req, res) {
       let bookid = req.params.id;
-      //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
+
+      Book.findById(bookid, (err, bookDoc) => {
+        if (bookDoc) {
+          res.json({
+            title: bookDoc.title,
+            _id: bookDoc._id,
+            comments: bookDoc.comments,
+          });
+        } else {
+          res.send("no book exists");
+        }
+      });
     })
 
     .post(function (req, res) {
