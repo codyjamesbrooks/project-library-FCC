@@ -118,15 +118,59 @@ suite("Functional Tests", function () {
       "POST /api/books/[id] => add comment/expect book object with id",
       function () {
         test("Test POST /api/books/[id] with comment", function (done) {
-          //done();
+          chai
+            .request(server)
+            .post("/api/books")
+            .send({ title: "TestBook" })
+            .end(function (err, res) {
+              const validId = res.body._id;
+              chai
+                .request(server)
+                .post("/api/books/" + validId)
+                .send({ comment: "Test Comment" })
+                .end(function (err, res) {
+                  assert.equal(res.status, 200);
+                  assert.equal(res.type, "application/json");
+                  assert.equal(res.body.title, "TestBook");
+                  assert.equal(res.body._id, validId);
+                  assert.isArray(res.body.comments);
+                  assert.equal(res.body.comments.length, 1);
+                  assert.equal(res.body.comments[0], "Test Comment");
+                });
+              done();
+            });
         });
 
         test("Test POST /api/books/[id] without comment field", function (done) {
-          //done();
+          chai
+            .request(server)
+            .post("/api/books")
+            .send({ title: "TestBooks" })
+            .end(function (err, res) {
+              const validId = res.body._id;
+              chai
+                .request(server)
+                .post("/api/books/" + validId)
+                .end(function (err, res) {
+                  assert.equal(res.status, 200);
+                  assert.equal(res.type, "text/html");
+                  assert.equal(res.text, "missing required field comment");
+                });
+              done();
+            });
         });
 
         test("Test POST /api/books/[id] with comment, id not in db", function (done) {
-          //done();
+          chai
+            .request(server)
+            .post("/api/books/1")
+            .send({ comment: "Test Comment won't matter" })
+            .end(function (err, res) {
+              assert.equal(res.status, 200);
+              assert.equal(res.type, "text/html");
+              assert.equal(res.text, "no book exists");
+              done();
+            });
         });
       }
     );
